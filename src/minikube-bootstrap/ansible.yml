@@ -1,0 +1,30 @@
+---
+- hosts: localhost
+  become: true
+  tasks:
+    - name: install requirements
+      apt:
+        name: ['docker.io','apparmor','apparmor-profiles','conntrack']
+        state: present
+        update_cache: true
+    - name: install minikube
+      get_url:
+        url: https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        dest: /usr/local/bin/minikube
+        mode: 0755
+    - name: get kubectl latest version
+      uri:
+        url: https://storage.googleapis.com/kubernetes-release/release/stable.txt
+        return_content: yes
+      register: kubectl_version
+
+    - name: install kubectl
+      uri:
+        url: https://dl.k8s.io/release/{{ kubectl_version.content }}/bin/linux/amd64/kubectl
+        follow_redirects: safe
+        dest: /usr/local/bin/kubectl
+        mode: 0755
+
+    - name: start minikube cluster
+      shell:
+        cmd: minikube start --driver=none
